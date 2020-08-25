@@ -30,7 +30,7 @@ top_characters <- dat %>%
   select(character)
 
 # What are the most common words for each character?
-mark4 <- dat %>%
+character_word_freq <- dat %>%
   filter(character != 'Scene Description') %>%
   unnest_tokens(word, 
                 character_words) %>%
@@ -44,7 +44,7 @@ mark4 <- dat %>%
   arrange(character, desc(n))
 
 # How many total words spoken by character?
-words_by_character <- mark4 %>%
+total_character_words <- character_word_freq %>%
   group_by(character,
            book_num,
            chapter_num) %>%
@@ -55,14 +55,14 @@ words_by_character <- mark4 %>%
   ungroup()
 
 # Bringing all of the dataframes together
-mark3 <- dat %>%
+final_df <- dat %>%
   filter(character != 'Scene Description') %>%
   distinct(character, 
            book_num, 
            chapter_num) %>%
   inner_join(episodes_full, by = c('book_num' = 'book_num', 'chapter_num' = 'chapter_num')) %>%
   inner_join(top_characters, by = 'character') %>%
-  inner_join(words_by_character, by = c('book_num' = 'book_num', 'chapter_num' = 'chapter_num', 'character' = 'character')) %>%
+  inner_join(total_character_words, by = c('book_num' = 'book_num', 'chapter_num' = 'chapter_num', 'character' = 'character')) %>%
   group_by(character) %>%
   complete(row = seq(1, 61, by = 1)) %>%
   as.data.frame()
