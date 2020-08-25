@@ -1,17 +1,21 @@
-#devtools::install_github("averyrobbins1/appa")
-#install.packages('tidytext')
+#### Load the packages and data source  ####
 
 library(tidyverse)
 library(dplyr)
 library(tidytext)
+library(viridis)
 
 dat <- appa::appa
 
+####  Data Cleaning ####
+
+# Generating a dataframe of all episodes with row index
 episodes_full <- dat %>%
   distinct(book_num,
            chapter_num) %>%
   mutate(row = row_number())
 
+# Who are the top 15 characters to make appearances?
 top_characters <- dat %>%
   filter(character != 'Scene Description') %>%
   distinct(character, 
@@ -25,7 +29,7 @@ top_characters <- dat %>%
   filter(row_number() <= 15) %>%
   select(character)
 
-
+# What are the most common words for each character?
 mark4 <- dat %>%
   filter(character != 'Scene Description') %>%
   unnest_tokens(word, 
@@ -39,6 +43,7 @@ mark4 <- dat %>%
   anti_join(stop_words) %>%
   arrange(character, desc(n))
 
+# How many total words spoken by character?
 words_by_character <- mark4 %>%
   group_by(character,
            book_num,
@@ -49,11 +54,7 @@ words_by_character <- mark4 %>%
   mutate(total_n = sum(n)) %>%
   ungroup()
 
-mark5 <- words_by_character %>%
-  distinct(character,
-           total_n) %>%
-  arrange(desc(total_n))
-
+# Bringing all of the dataframes together
 mark3 <- dat %>%
   filter(character != 'Scene Description') %>%
   distinct(character, 
@@ -66,10 +67,7 @@ mark3 <- dat %>%
   complete(row = seq(1, 61, by = 1)) %>%
   as.data.frame()
 
-library(viridis)
-
-str(mark3)
-class(mark3)
+####  Visualization ####
 
 ggplot(mark3,
        aes(x = row,
