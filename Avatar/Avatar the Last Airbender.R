@@ -54,6 +54,12 @@ total_character_words <- character_word_freq %>%
   mutate(total_n = sum(n)) %>%
   ungroup()
 
+total_character_words %>%
+  distinct(character,
+           total_n) %>%
+  inner_join(top_characters, by = 'character') %>%
+  arrange(desc(total_n))
+
 # Bringing all of the dataframes together
 final_df <- dat %>%
   filter(character != 'Scene Description') %>%
@@ -65,21 +71,25 @@ final_df <- dat %>%
   inner_join(total_character_words, by = c('book_num' = 'book_num', 'chapter_num' = 'chapter_num', 'character' = 'character')) %>%
   group_by(character) %>%
   complete(row = seq(1, 61, by = 1)) %>%
+  mutate(sort_column = total_n,
+         sort_column = ifelse(is.na(sort_column), 0, sort_column),
+         sort_column = max(sort_column)) %>%
+  ungroup() %>%
   as.data.frame()
 
 ####  Visualization ####
 
-ggplot(mark3,
+ggplot(final_df,
        aes(x = row,
-           y = reorder(character, -total_n))) +
+           y = reorder(character, sort_column))) +
   geom_tile(color = '#e1e1e1',
             fill = NA,
             size = 0.5,
             alpha = 0.3) +
-  geom_tile(data = subset(mark3, !is.na(n)),
+  geom_tile(data = subset(final_df, !is.na(n)),
             color = 'white',
             mapping = aes(x = row,
-                          y = reorder(character, -total_n),
+                          y = reorder(character, sort_column),
                           fill = n),
             size = 0.5) +
   #scale_y_discrete(limits=c(1,61),
