@@ -4,8 +4,10 @@ library(tidyverse)
 library(dplyr)
 library(tidytext)
 library(viridis)
+library(ggforce)
 
 dat <- appa::appa
+stop_wordsdf <- stop_words
 
 ####  Data Cleaning ####
 
@@ -40,7 +42,7 @@ character_word_freq <- dat %>%
            word) %>%
   summarise(n = n()) %>%
   ungroup() %>%
-  anti_join(stop_words) %>%
+  #anti_join(stop_words) %>%
   arrange(character, desc(n))
 
 # How many total words spoken by character?
@@ -54,10 +56,10 @@ total_character_words <- character_word_freq %>%
   mutate(total_n = sum(n)) %>%
   ungroup()
 
-total_character_words %>%
+mark5 <- total_character_words %>%
   distinct(character,
            total_n) %>%
-  inner_join(top_characters, by = 'character') %>%
+  #inner_join(top_characters, by = 'character') %>%
   arrange(desc(total_n))
 
 # Bringing all of the dataframes together
@@ -75,58 +77,52 @@ final_df <- dat %>%
          sort_column = ifelse(is.na(sort_column), 0, sort_column),
          sort_column = max(sort_column)) %>%
   ungroup() %>%
-  as.data.frame()
+  as.data.frame() %>%
+  replace(is.na(.), 0) %>%
+  mutate(n_bucket = ifelse(n <= 250 & n > 1, '1-250',
+                           ifelse(n > 250 & n <= 500, '250-500',
+                                  ifelse(n > 500 & n <= 750, '500-750', 
+                                         ifelse(n == 0, 'Did not speak/not featured', '+750 words')))))
+
+final_df$n_bucket <- factor(final_df$n_bucket, levels = unique(c('Did not speak/not featured', '1-250', '250-500', '500-750', '+750 words')))
 
 ####  Visualization ####
 
-ggplot(final_df,
+ggplot(subset(final_df, row > 0),
        aes(x = row,
            y = reorder(character, sort_column))) +
-  geom_tile(color = '#e1e1e1',
+  geom_tile(#color = '#e1e1e1',
             fill = NA,
             size = 0.5,
             alpha = 0.3) +
-  geom_tile(data = subset(final_df, !is.na(n)),
+  geom_tile(data = subset(final_df, !is.na(n), row > 0),
             color = 'white',
             mapping = aes(x = row,
                           y = reorder(character, sort_column),
-                          fill = n),
+                          fill = n_bucket),
             size = 0.5) +
-  #scale_y_discrete(limits=c(1,61),
-  #                 breaks = seq(1, 61, by = 10)) +
-  scale_fill_viridis_c(option = 'inferno',
-                       breaks = c(50, 150, 250)) +
+  scale_fill_manual(values = c('whitesmoke', '#ffcba7', '#ff935f', '#ef5824', '#d10000')) +
   labs(title = 'Which Character Appeared and Spoke the Most in Avatar: Last Air Bender?',
+       subtitle = 'Among the characters who appeared the most in ATLAB, Sokka spoke the most at +18k words by the end of Book Three. Aang spoke +17k words, and Katara spoke just under 15k.',
        x = 'Episode',
        y = '',
        caption = 'Visualization by Alex Elfering\nSource: Appa R Package',
        fill = 'Total Words Spoken') +
-  theme(plot.title = element_text(face = 'bold', 
-                                  size = 18, 
-                                  family = 'Arial'),
-        legend.position = 'top',
-        axis.text.x = element_text(vjust = 0.5, 
-                                   hjust = 0, 
-                                   size = 12),
-        axis.title.y = element_text(hjust = 0.5, 
-                                    vjust = 0.5, 
-                                    size = 12),
-        axis.title.x = element_text(hjust = 0.5, 
-                                    vjust = 0.5, 
-                                    size = 12),
-        plot.subtitle = element_text(size = 15, 
-                                     family = 'Arial'),
-        plot.caption = element_text(size = 12, 
-                                    family = 'Arial'),
-        axis.title = element_text(size = 12, 
-                                  family = 'Arial'),
-        axis.text = element_text(size = 12, 
-                                 family = 'Arial'),
-        strip.text = ggplot2::element_text(size = 12, 
-                                           hjust = 0, 
-                                           face = 'bold', 
-                                           color = 'brown', 
-                                           family = 'Arial'),
+  geom_mark_rect(data = subset(final_df, row == 27), 
+                 aes(group = row),
+                 radius = 0, expand = 0.008, size = 0.5, fill = NA) +
+  geom_vline(xintercept = 0.5, size = 0.5) +
+  geom_vline(xintercept = 20.5, size = 0.5) +
+  geom_vline(xintercept = 40.5, size = 0.5) +
+  theme(plot.title = element_text(face = 'bold', size = 18, family = 'Arial'),
+        legend.position = 'bottom',
+        axis.text.x = element_text(vjust = 0.5, hjust = 0, size = 12),
+        axis.title.y = element_text(hjust = 0.5, vjust = 0.5, size = 12),
+        axis.title.x = element_text(hjust = 0.5, vjust = 0.5, size = 12),
+        plot.subtitle = element_text(size = 15, family = 'Arial'),
+        plot.caption = element_text(size = 12, family = 'Arial'),
+        axis.title = element_text(size = 12, family = 'Arial'),
+        axis.text = element_text(size = 12, family = 'Arial'),
         strip.background = element_rect(fill = NA),
         panel.background = ggplot2::element_blank(),
         axis.line = ggplot2::element_line(),
