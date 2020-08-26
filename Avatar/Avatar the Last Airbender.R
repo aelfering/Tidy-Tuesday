@@ -16,20 +16,6 @@ episodes_full <- dat %>%
            chapter_num) %>%
   mutate(row = row_number())
 
-# Who are the top 15 characters to make appearances?
-top_characters <- dat %>%
-  filter(character != 'Scene Description') %>%
-  distinct(character, 
-           book_num, 
-           chapter_num) %>%
-  unite(Season_Episode, c('book_num', 'chapter_num'), sep = '-') %>%
-  group_by(character) %>%
-  summarise(n = n()) %>%
-  ungroup() %>%
-  arrange(desc(n)) %>%
-  filter(row_number() <= 15) %>%
-  select(character)
-
 # What are the most common words for each character?
 character_word_freq <- dat %>%
   filter(character != 'Scene Description') %>%
@@ -54,6 +40,20 @@ total_character_words <- character_word_freq %>%
   group_by(character) %>%
   mutate(total_n = sum(n)) %>%
   ungroup()
+
+# Who are the top 15 characters to make appearances?
+top_characters <- dat %>%
+  filter(character != 'Scene Description') %>%
+  distinct(character, 
+           book_num, 
+           chapter_num) %>%
+  unite(Season_Episode, c('book_num', 'chapter_num'), sep = '-') %>%
+  group_by(character) %>%
+  summarise(n = n()) %>%
+  ungroup() %>%
+  arrange(desc(n)) %>%
+  filter(row_number() <= 20) %>%
+  select(character)
 
 # Bringing all of the dataframes together
 final_df <- dat %>%
@@ -95,12 +95,13 @@ ggplot(subset(final_df, row > 0),
                           fill = n_bucket),
             size = 0.5) +
   scale_fill_manual(values = c('whitesmoke', '#ffcba7', '#ff935f', '#ef5824', '#d10000')) +
-  labs(title = 'Which Character Appeared and Spoke the Most in Avatar: Last Air Bender?',
-       subtitle = 'Among the characters who appeared the most in ATLAB, Sokka spoke the most at +18k words by the end of Book Three. Aang spoke +17k words, and Katara spoke just under 15k.',
+  labs(#title = 'Which Character Appeared and Spoke the Most in Avatar: Last Air Bender?',
+  #     subtitle = 'Among the characters who appeared the most in ATLAB, Sokka spoke the most at +18k words by the end of Book Three. Aang spoke +17k\nwords, and Katara spoke just under 15k.',
        x = 'Episode',
        y = '',
-       caption = 'Visualization by Alex Elfering\nSource: Appa R Package',
-       fill = 'Total Words Spoken') +
+  #     caption = 'Visualization by Alex Elfering\nSource: Appa R Package',
+       fill = 'Total Words Spoken'
+    ) +
   geom_mark_rect(data = subset(final_df, row == 27), 
                  aes(group = row),
                  radius = 0, expand = 0.008, size = 0.5, fill = NA) +
@@ -108,7 +109,7 @@ ggplot(subset(final_df, row > 0),
   geom_vline(xintercept = 20.5, size = 0.5) +
   geom_vline(xintercept = 40.5, size = 0.5) +
   theme(plot.title = element_text(face = 'bold', size = 18, family = 'Arial'),
-        legend.position = 'bottom',
+        legend.position = 'none',
         axis.text.x = element_text(vjust = 0.5, hjust = 0, size = 12),
         axis.title.y = element_text(hjust = 0.5, vjust = 0.5, size = 12),
         axis.title.x = element_text(hjust = 0.5, vjust = 0.5, size = 12),
