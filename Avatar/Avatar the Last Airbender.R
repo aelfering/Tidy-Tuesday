@@ -7,7 +7,6 @@ library(viridis)
 library(ggforce)
 
 dat <- appa::appa
-stop_wordsdf <- stop_words
 
 ####  Data Cleaning ####
 
@@ -55,12 +54,6 @@ total_character_words <- character_word_freq %>%
   group_by(character) %>%
   mutate(total_n = sum(n)) %>%
   ungroup()
-
-mark5 <- total_character_words %>%
-  distinct(character,
-           total_n) %>%
-  #inner_join(top_characters, by = 'character') %>%
-  arrange(desc(total_n))
 
 # Bringing all of the dataframes together
 final_df <- dat %>%
