@@ -1,10 +1,25 @@
 #### Load the packages and data source  ####
+list.of.packages <- c("ggplot2", 
+                      "dplyr", 
+                      'tidyverse', 
+                      'tidyr',
+                      'ggforce',
+                      'grid',
+                      'cowplot',
+                      'gridExtra',
+                      'tidylog')
+
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
 
 library(tidyverse)
 library(dplyr)
 library(tidytext)
 library(viridis)
 library(ggforce)
+library(grid)
+library(gridExtra)
+library(cowplot)
 
 dat <- appa::appa
 
@@ -125,7 +140,54 @@ ggplot(subset(final_df, row > 0),
 
 
 
+get_legend <- ggplot(subset(final_df, row > 0),
+       aes(x = row,
+           y = reorder(character, sort_column))) +
+  geom_tile(#color = '#e1e1e1',
+    fill = NA,
+    size = 0.5,
+    alpha = 0.3) +
+  geom_tile(data = subset(final_df, !is.na(n), row > 0),
+            color = 'white',
+            mapping = aes(x = row,
+                          y = reorder(character, sort_column),
+                          fill = n_bucket),
+            size = 0.5) +
+  scale_fill_manual(values = c('whitesmoke', '#ffcba7', '#ff935f', '#ef5824', '#d10000')) +
+  labs(#title = 'Which Character Appeared and Spoke the Most in Avatar: Last Air Bender?',
+    #     subtitle = 'Among the characters who appeared the most in ATLAB, Sokka spoke the most at +18k words by the end of Book Three. Aang spoke +17k\nwords, and Katara spoke just under 15k.',
+    x = 'Episode',
+    y = '',
+    #     caption = 'Visualization by Alex Elfering\nSource: Appa R Package',
+    fill = 'Total Words Spoken'
+  ) +
+  geom_mark_rect(data = subset(final_df, row == 27), 
+                 aes(group = row),
+                 radius = 0, expand = 0.008, size = 0.5, fill = NA) +
+  geom_vline(xintercept = 0.5, size = 0.5) +
+  geom_vline(xintercept = 20.5, size = 0.5) +
+  geom_vline(xintercept = 40.5, size = 0.5) +
+  theme(plot.title = element_text(face = 'bold', size = 18, family = 'Arial'),
+        legend.position = 'top',
+        axis.text.x = element_text(vjust = 0.5, hjust = 0, size = 12),
+        axis.title.y = element_text(hjust = 0.5, vjust = 0.5, size = 12),
+        axis.title.x = element_text(hjust = 0.5, vjust = 0.5, size = 12),
+        plot.subtitle = element_text(size = 15, family = 'Arial'),
+        plot.caption = element_text(size = 12, family = 'Arial'),
+        axis.title = element_text(size = 12, family = 'Arial'),
+        axis.text = element_text(size = 12, family = 'Arial'),
+        strip.background = element_rect(fill = NA),
+        panel.background = ggplot2::element_blank(),
+        axis.line = ggplot2::element_line(),
+        panel.grid.major.y = ggplot2::element_blank(),
+        panel.grid.major.x = ggplot2::element_blank()) 
 
+
+
+poke.legend <- cowplot::get_legend(get_legend)
+
+grid.newpage()
+grid.draw(poke.legend)
 
 
 
