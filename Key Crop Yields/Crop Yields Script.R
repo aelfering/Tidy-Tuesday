@@ -44,7 +44,7 @@ key_crop_cleaned <- key_crop_yields %>%
                names_to = 'Crop') %>%
   ungroup() %>%
   mutate(Crop = gsub(' \\(tonnes per hectare\\)', '', Crop)) %>%
-  filter(Crop == 'Potatoes') %>%
+  filter(Crop == 'Bananas') %>%
   mutate(Entity = case_when(Entity == 'Democratic Republic of Congo' ~ 'Democratic Republic of the Congo',
                             Entity == 'Russia' ~ 'Russian Federation',
                             Entity == 'Timor' ~ 'Timor-Leste',
@@ -107,7 +107,7 @@ ggplot(full_country_buckets) +
                         fill = Buckets),
           color = 'black',
           size = 0.5) +
-  labs(title = 'Which Countries Yield the Most Potatoes?',
+  labs(title = 'Which Countries Yield the Most Bananas?',
        subtitle = 'Yields grouped by percentiles. Countries within the 90th Percentile are highlighted in black.',
        caption = 'Visualization by Alex Elfering\nSouce: Our World in Data',
        fill = 'Percentile:') +
