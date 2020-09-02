@@ -1,4 +1,3 @@
-
 ####  Loading the libraries and data  ####
 library(dplyr)
 library(ggplot2)
@@ -22,31 +21,32 @@ worlddf <- world
 
 ####  Data Cleaning and Joining ####
 
+# these are entity names that I should avoid running calc on
 avoid_entity_names <- key_crop_yields %>%
   filter(is.na(Code) | Entity == 'World') %>%
   distinct(Entity)
 
-# long pivot key crop yield df
-key_crop_percentiles <- key_crop_yields %>%
+# this cleans the key_crop_yields df
+# What is done:
+#   Removed entity names found in the df above
+#   pivoted the crop columns into one column with rows for each crop by country
+#   cleaned the crop names to remove '(tonnes per hectare)'
+#   filtered on cocoa beans
+#   fixed names to join with world df
+key_crop_cleaned <- key_crop_yields %>%
   filter(Year == max(Year)) %>%
   anti_join(avoid_entity_names) %>%
   group_by(Entity,
            Code,
            Year) %>%
-  #pivot_longer()
   pivot_longer(cols = -c('Entity',
                          'Code',
                          'Year'),
                names_to = 'Crop') %>%
   ungroup() %>%
   group_by(Crop) %>%
-  mutate(value = ifelse(is.na(value), 0, value),
-         Crop = gsub(' \\(tonnes per hectare\\)', '', Crop)) %>%
-  filter(Crop == 'Cocoa beans')
-
-head(key_crop_percentiles)
-
-entity_country_name_fixes <- key_crop_percentiles %>%
+  mutate(Crop = gsub(' \\(tonnes per hectare\\)', '', Crop)) %>%
+  filter(Crop == 'Cocoa beans') %>%
   mutate(Entity = case_when(Entity == 'Democratic Republic of Congo' ~ 'Democratic Republic of the Congo',
                             Entity == 'Russia' ~ 'Russian Federation',
                             Entity == 'Timor' ~ 'Timor-Leste',
@@ -59,6 +59,21 @@ entity_country_name_fixes <- key_crop_percentiles %>%
                             Entity == 'South Korea' ~ 'Republic of Korea',
                             Entity == 'Brunei' ~ 'Brunei Darussalam',
                             TRUE ~ Entity))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 mark1 <- full_join(entity_country_name_fixes,
                    worlddf,
