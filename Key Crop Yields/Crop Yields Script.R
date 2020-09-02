@@ -63,7 +63,7 @@ country_names <- dplyr::select(key_crop_cleaned, Entity)
 
 null_countries <- worlddf %>%
   mutate(value = NA,
-         Crop_Percentile = NA) %>%
+         Crop_Percentile = 0) %>%
   anti_join(country_names,
             by = c('name_long' = 'Entity')) %>%
   filter(iso_a2 != 'AQ')
@@ -72,7 +72,7 @@ na_countries <- key_crop_cleaned %>%
   dplyr::select(Entity,
                 value) %>%
   filter(is.na(value)) %>%
-  mutate(Crop_Percentile = NA) %>%
+  mutate(Crop_Percentile = 0) %>%
   inner_join(world,
              by = c('Entity' = 'name_long'))
 
@@ -87,21 +87,31 @@ percentile_countries <- key_crop_cleaned %>%
              by = c('Entity' = 'name_long'))
 
 full_country_df <- bind_rows(percentile_countries, na_null_countries)
+       
+full_country_buckets <- full_country_df %>%
+  mutate(Buckets = ifelse(Crop_Percentile == 0, 'Did not Produce',
+                          ifelse(Crop_Percentile > 0 & Crop_Percentile <= 0.25, '1-25th',
+                                 ifelse(Crop_Percentile > 0.25 & Crop_Percentile <= 0.5, '25-50th',
+                                        ifelse(Crop_Percentile > 0.5 & Crop_Percentile <= 0.75, '50-75th',
+                                               ifelse(Crop_Percentile > 0.75 & Crop_Percentile <= 1, '75-100th', NA))))))
 
-ggplot(full_country_df) +
+full_country_buckets$Buckets <- factor(full_country_buckets$Buckets, levels = unique(c('Did not Produce', '1-25th', '25-50th', '50-75th', '75-100th')))
+
+ggplot(full_country_buckets) +
   geom_sf(aes(geometry = geom, 
-              fill = Crop_Percentile),
+              fill = Buckets),
           color = 'white',
           size = 0.2) +
-  geom_sf(data = subset(full_country_df, Crop_Percentile >= 0.9),
+  geom_sf(data = subset(full_country_buckets, Crop_Percentile >= 0.9),
           mapping = aes(geometry = geom,
-                        fill = Crop_Percentile),
+                        fill = Buckets),
           color = 'black',
           size = 0.5) +
-  labs(title = 'Countries that Yield Cocoa Beans are Usually Closest to Equator',
+  labs(title = 'Which Countries Yield the Most Potatoes?',
        subtitle = 'Yields grouped by percentiles. Countries within the 90th Percentile are highlighted in black.',
        caption = 'Visualization by Alex Elfering\nSouce: Our World in Data',
        fill = 'Percentile:') +
+  scale_fill_manual(values = c('whitesmoke', '#ffcba7', '#fb9567', '#e95d33', '#d10000')) +
   theme(plot.title = element_text(face = 'bold', size = 18, family = 'Arial'),
         legend.position = 'top',
         legend.text = element_text(size = 12, family = 'Arial'),
