@@ -6,7 +6,6 @@ library(tidyverse)
 library(viridis)
 library(sf)
 library(raster)
-#library(dplyr)
 library(spData)
 library(tmap)
 library(leaflet)
@@ -44,9 +43,8 @@ key_crop_cleaned <- key_crop_yields %>%
                          'Year'),
                names_to = 'Crop') %>%
   ungroup() %>%
-  group_by(Crop) %>%
   mutate(Crop = gsub(' \\(tonnes per hectare\\)', '', Crop)) %>%
-  filter(Crop == 'Cocoa beans') %>%
+  filter(Crop == 'Potatoes') %>%
   mutate(Entity = case_when(Entity == 'Democratic Republic of Congo' ~ 'Democratic Republic of the Congo',
                             Entity == 'Russia' ~ 'Russian Federation',
                             Entity == 'Timor' ~ 'Timor-Leste',
@@ -60,46 +58,46 @@ key_crop_cleaned <- key_crop_yields %>%
                             Entity == 'Brunei' ~ 'Brunei Darussalam',
                             TRUE ~ Entity))
 
+# What countries are not on this list?
+country_names <- dplyr::select(key_crop_cleaned, Entity)
 
+null_countries <- worlddf %>%
+  mutate(value = NA,
+         Crop_Percentile = NA) %>%
+  anti_join(country_names,
+            by = c('name_long' = 'Entity')) %>%
+  filter(iso_a2 != 'AQ')
 
+na_countries <- key_crop_cleaned %>%
+  dplyr::select(Entity,
+                value) %>%
+  filter(is.na(value)) %>%
+  mutate(Crop_Percentile = NA) %>%
+  inner_join(world,
+             by = c('Entity' = 'name_long'))
 
+na_null_countries <- bind_rows(null_countries, na_countries)
 
+percentile_countries <- key_crop_cleaned %>%
+  dplyr::select(Entity,
+                value) %>%
+  filter(!is.na(value)) %>%
+  mutate(Crop_Percentile = ntile(value, 100)/100) %>%
+  inner_join(world,
+             by = c('Entity' = 'name_long'))
 
+full_country_df <- bind_rows(percentile_countries, na_null_countries)
 
-
-
-
-
-
-
-
-
-
-mark1 <- full_join(entity_country_name_fixes,
-                   worlddf,
-                   by = c('Entity' = 'name_long'))
-
-mark2 <- mark1 %>%
-  mutate(group1 = case_when(Crop_Percentile <= 0.25 ~ '0-25th Percentile',
-                            Crop_Percentile > 0.25 & Crop_Percentile <= 0.50 ~ '25-50th',
-                            Crop_Percentile > 0.50 & Crop_Percentile <= 0.75 ~ '50-75th',
-                            Crop_Percentile > 0.75 ~ '75th-100th'))
-  
-
-ggplot(subset(mark2, Crop %in% c('Cocoa beans'))) +
+ggplot(full_country_df) +
   geom_sf(aes(geometry = geom, 
-              fill = group1),
+              fill = Crop_Percentile),
           color = 'white',
           size = 0.2) +
-  # This extra plot highlights countries with highest percentages
-  geom_sf(data = subset(mark2, Crop %in% c('Cocoa beans') & Crop_Percentile >= 0.9),
+  geom_sf(data = subset(full_country_df, Crop_Percentile >= 0.9),
           mapping = aes(geometry = geom,
-                        fill = group1),
+                        fill = Crop_Percentile),
           color = 'black',
           size = 0.5) +
-  geom_hline(yintercept = 0,
-             linetype = 'dashed') +
-  scale_fill_manual(values = c('#ffc6a7', '#f58d55', '#d25b22', '#a72c00')) +
   labs(title = 'Countries that Yield Cocoa Beans are Usually Closest to Equator',
        subtitle = 'Yields grouped by percentiles. Countries within the 90th Percentile are highlighted in black.',
        caption = 'Visualization by Alex Elfering\nSouce: Our World in Data',
@@ -120,7 +118,3 @@ ggplot(subset(mark2, Crop %in% c('Cocoa beans'))) +
         panel.grid.major.y = element_blank(),
         panel.grid.major.x = element_blank()
   ) 
-
-
-
-
