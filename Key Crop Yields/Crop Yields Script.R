@@ -26,12 +26,6 @@ avoid_entity_names <- key_crop_yields %>%
   distinct(Entity)
 
 # this cleans the key_crop_yields df
-# What is done:
-#   Removed entity names found in the df above
-#   pivoted the crop columns into one column with rows for each crop by country
-#   cleaned the crop names to remove '(tonnes per hectare)'
-#   filtered on cocoa beans
-#   fixed names to join with world df
 key_crop_cleaned <- key_crop_yields %>%
   filter(Year == max(Year)) %>%
   anti_join(avoid_entity_names) %>%
@@ -97,6 +91,7 @@ full_country_buckets <- full_country_df %>%
 
 full_country_buckets$Buckets <- factor(full_country_buckets$Buckets, levels = unique(c('Did not Produce', '1-25th', '25-50th', '50-75th', '75-100th')))
 
+####  Visualization ####
 ggplot(full_country_buckets) +
   geom_sf(aes(geometry = geom, 
               fill = Buckets),
