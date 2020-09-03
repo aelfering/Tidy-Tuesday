@@ -2,7 +2,7 @@
 library(dplyr)
 library(ggplot2)
 library(tidyverse)
-#library(tidylog)
+library(tidylog)
 library(viridis)
 library(sf)
 library(raster)
