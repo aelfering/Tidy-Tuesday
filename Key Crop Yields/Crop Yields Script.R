@@ -106,7 +106,7 @@ ggplot(full_country_buckets) +
        subtitle = 'Yields grouped by percentiles. Countries within the 90th Percentile are highlighted in black.',
        caption = 'Visualization by Alex Elfering\nSouce: Our World in Data',
        fill = 'Percentile:') +
-  scale_fill_manual(values = c('whitesmoke', '#ffcba7', '#fb9567', '#e95d33', '#d10000')) +
+  scale_fill_manual(values = c('#949494', '#ffcba7', '#fb9567', '#e95d33', '#d10000')) +
   theme(plot.title = element_text(face = 'bold', size = 18, family = 'Arial'),
         legend.position = 'top',
         legend.text = element_text(size = 12, family = 'Arial'),
